@@ -24,8 +24,8 @@ tracking = False
 
 def start(update, context):
 
-    update.message.reply_text(
-        "✅ Clash Tracker Bot Online\n\n"
+    update.message.reply_text
+      (  "✅ Clash Tracker Bot Online\n\n"
         "/addclan #TAG\n"
         "/removeclan #TAG\n"
         "/searchclan #TAG\n"
