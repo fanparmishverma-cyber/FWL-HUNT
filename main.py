@@ -3,7 +3,8 @@ import time
 import threading
 from telegram.ext import Updater, CommandHandler
 
-BOT_TOKEN = "8602830344:AAHgvaxoEc4uU5NoWEAHFYh71JenJHJZejo"
+BOT_TOKEN = "8602830344:AAHgvaxoEc4uU5NoWEAHFYh71JenJHJZejo
+"
 CHAT_ID = "1314410565"
 COC_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMxOGY3LTAwMDAtYTFlYi03ZmExLTJjNzQzM2M2Y2NhNSJ9.eyJpc3MiOiJzdXBlcmNlbGwiLCJhdWQiOiJzdXBlcmNlbGw6Z2FtZWFwaSIsImp0aSI6IjI5MDZjN2E2LTEzMDYtNDc4MC1hODlmLTY1OWI4MGJjMjVkNyIsImlhdCI6MTc3OTMzMzE0MSwic3ViIjoiZGV2ZWxvcGVyLzMyNmE2NTEyLWVlNmUtZGFkZC02Mzc4LWRlZWFkNTQyMTVjZSIsInNjb3BlcyI6WyJjbGFzaCJdLCJsaW1pdHMiOlt7InRpZXIiOiJkZXZlbG9wZXIvc2lsdmVyIiwidHlwZSI6InRocm90dGxpbmcifSx7ImNpZHJzIjpbIjAuMC4wLjAiXSwidHlwZSI6ImNsaWVudCJ9XX0.Hfxf1K9q4YefT2rJyWO3QnmH8DLgtz0GcL0NC24lVBhwlzbxcFd6f6428e0A-Mo9g_mb6fcAzQo0ydxP_iab9g"
 
@@ -24,6 +25,7 @@ tracking = False
 # =========================
 
 def start(update, context):
+
     update.message.reply_text(
         "✅ Clash Tracker Bot Online\n\n"
         "/addclan #TAG\n"
@@ -39,6 +41,7 @@ def start(update, context):
     )
 
 def ping(update, context):
+
     update.message.reply_text("🏓 Pong! Bot is working.")
 
 def addclan(update, context):
@@ -81,10 +84,36 @@ def searchclan(update, context):
 
     clan = context.args[0].upper()
 
-    if clan in tracked_clans:
-        update.message.reply_text(f"✅ {clan} is being tracked")
+    if clan not in tracked_clans:
+        update.message.reply_text("❌ Clan not tracked")
+        return
+
+    data = get_war(clan)
+
+    if not data:
+        update.message.reply_text("❌ Failed to fetch clan data")
+        return
+
+    clan_name = data["clan"]["name"]
+
+    state = data.get("state", "unknown")
+
+    if state == "inWar":
+        war_status = "🔥 In War"
+
+    elif state == "preparation":
+        war_status = "⚔ Preparation Day"
+
     else:
-        update.message.reply_text(f"❌ {clan} not found")
+        war_status = "❌ Not In War"
+
+    msg = (
+        f"🏰 Clan: {clan_name}\n"
+        f"🏷 Tag: {clan}\n"
+        f"📢 Status: {war_status}"
+    )
+
+    update.message.reply_text(msg)
 
 def clans(update, context):
 
@@ -92,10 +121,19 @@ def clans(update, context):
         update.message.reply_text("No clans added")
         return
 
-    msg = f"🏰 Total Clans: {len(tracked_clans)}\n\n"
+    msg = f"🏰 Tracking {len(tracked_clans)} Clans\n\n"
 
     for i, clan in enumerate(tracked_clans, start=1):
-        msg += f"{i}. {clan}\n"
+
+        data = get_war(clan)
+
+        if data:
+            clan_name = data["clan"]["name"]
+        else:
+            clan_name = "Unknown"
+
+        msg += f"{i}. {clan_name}\n"
+        msg += f"🏷 {clan}\n\n"
 
     update.message.reply_text(msg)
 
@@ -112,11 +150,15 @@ def notinwar(update, context):
         if not data:
             continue
 
+        clan_name = data["clan"]["name"]
+
         state = data.get("state", "")
 
         if state != "inWar" and state != "preparation":
 
-            msg += f"{clan}\n"
+            msg += f"{clan_name}\n"
+            msg += f"🏷 {clan}\n\n"
+
             count += 1
 
     if count == 0:
