@@ -28,7 +28,9 @@ def start(update, context):
         "✅ Clash Tracker Bot Online\n\n"
         "/addclan #TAG\n"
         "/removeclan #TAG\n"
+        "/searchclan #TAG\n"
         "/clans\n"
+        "/notinwar\n"
         "/adduser @username\n"
         "/users\n"
         "/track\n"
@@ -40,6 +42,7 @@ def ping(update, context):
     update.message.reply_text("🏓 Pong! Bot is working.")
 
 def addclan(update, context):
+
     global tracked_clans
 
     if len(context.args) == 0:
@@ -55,6 +58,7 @@ def addclan(update, context):
         update.message.reply_text("Clan already added")
 
 def removeclan(update, context):
+
     global tracked_clans
 
     if len(context.args) == 0:
@@ -69,19 +73,59 @@ def removeclan(update, context):
     else:
         update.message.reply_text("Clan not found")
 
+def searchclan(update, context):
+
+    if len(context.args) == 0:
+        update.message.reply_text("Usage: /searchclan #TAG")
+        return
+
+    clan = context.args[0].upper()
+
+    if clan in tracked_clans:
+        update.message.reply_text(f"✅ {clan} is being tracked")
+    else:
+        update.message.reply_text(f"❌ {clan} not found")
+
 def clans(update, context):
+
     if not tracked_clans:
         update.message.reply_text("No clans added")
         return
 
-    msg = "🏰 Tracked Clans:\n\n"
+    msg = f"🏰 Total Clans: {len(tracked_clans)}\n\n"
+
+    for i, clan in enumerate(tracked_clans, start=1):
+        msg += f"{i}. {clan}\n"
+
+    update.message.reply_text(msg)
+
+def notinwar(update, context):
+
+    msg = "❌ Clans Not In War:\n\n"
+
+    count = 0
 
     for clan in tracked_clans:
-        msg += f"{clan}\n"
+
+        data = get_war(clan)
+
+        if not data:
+            continue
+
+        state = data.get("state", "")
+
+        if state != "inWar" and state != "preparation":
+
+            msg += f"{clan}\n"
+            count += 1
+
+    if count == 0:
+        msg = "✅ All clans are in war/preparation"
 
     update.message.reply_text(msg)
 
 def adduser(update, context):
+
     global mentioned_users
 
     if len(context.args) == 0:
@@ -97,6 +141,7 @@ def adduser(update, context):
         update.message.reply_text("User already added")
 
 def users(update, context):
+
     if not mentioned_users:
         update.message.reply_text("No users added")
         return
@@ -109,6 +154,7 @@ def users(update, context):
     update.message.reply_text(msg)
 
 def track(update, context):
+
     global tracking
 
     tracking = True
@@ -116,6 +162,7 @@ def track(update, context):
     update.message.reply_text("🚀 Tracking Started")
 
 def stop(update, context):
+
     global tracking
 
     tracking = False
@@ -197,7 +244,9 @@ dp.add_handler(CommandHandler("start", start))
 dp.add_handler(CommandHandler("ping", ping))
 dp.add_handler(CommandHandler("addclan", addclan))
 dp.add_handler(CommandHandler("removeclan", removeclan))
+dp.add_handler(CommandHandler("searchclan", searchclan))
 dp.add_handler(CommandHandler("clans", clans))
+dp.add_handler(CommandHandler("notinwar", notinwar))
 dp.add_handler(CommandHandler("adduser", adduser))
 dp.add_handler(CommandHandler("users", users))
 dp.add_handler(CommandHandler("track", track))
